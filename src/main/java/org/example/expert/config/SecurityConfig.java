@@ -1,55 +1,51 @@
 package org.example.expert.config;
 
+import org.example.expert.domain.user.enums.UserRole;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter;
 
 import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
 
-	private final JwtUtil jwtUtil;
-	private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-
-	private static final String[] AUTH_WHITELIST = {
-		"/auth/signup", "/auth/signin"
-	};
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		return http
+			.csrf(AbstractHttpConfigurer::disable)
+			.sessionManagement(session -> session
+				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+			)
+			.addFilterBefore(jwtAuthenticationFilter, SecurityContextHolderAwareRequestFilter.class) 
 
-			.csrf((csrf) -> csrf.disable())
-			.cors(Customizer.withDefaults())
-
-			.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(
-			SessionCreationPolicy.STATELESS))
-
-			.formLogin((form) -> form.disable())
+			.formLogin(AbstractHttpConfigurer::disable)
+			.anonymous(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
+			.logout(AbstractHttpConfigurer::disable)
+			.rememberMe(AbstractHttpConfigurer::disable)
 
+			.authorizeHttpRequests(auth -> auth
+				.requestMatchers(request -> request.getRequestURI().startsWith("/auth")).permitAll()
+				.requestMatchers("/admin").hasAuthority(UserRole.ADMIN.getAuthority())
+				.anyRequest().authenticated()
+			)
+			.build();
+	}
 
-			.addFilterBefore(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
-
-			.exceptionHandling((exceptionHandling) -> exceptionHandling
-			.authenticationEntryPoint(jwtAuthenticationEntryPoint)
-			.accessDeniedHandler(jwtAccessDeniedHandler)
-		)
-
-		.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers(AUTH_WHITELIST).permitAll()
-				.anyRequest().permitAll()
-		);
-		return http.build();
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new PasswordEncoder();
 	}
 }
