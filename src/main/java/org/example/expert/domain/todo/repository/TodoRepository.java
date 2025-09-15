@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.Optional;
 
-public interface TodoRepository extends JpaRepository<Todo, Long> {
+public interface TodoRepository extends JpaRepository<Todo, Long>, TodoQuerydslRepository {
 
     @Query("SELECT t FROM Todo t "
         + "LEFT JOIN FETCH t.user u "

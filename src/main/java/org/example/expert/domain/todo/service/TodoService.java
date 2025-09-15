@@ -1,14 +1,19 @@
 package org.example.expert.domain.todo.service;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
+import org.example.expert.domain.comment.repository.CommentRepository;
+import org.example.expert.domain.common.dto.PageResponseDto;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoSearchResponse;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
@@ -26,6 +31,7 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
     private final WeatherClient weatherClient;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public TodoSaveResponse saveTodo(AuthUser authUser, TodoSaveRequest todoSaveRequest) {
@@ -81,5 +87,21 @@ public class TodoService {
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
         );
+    }
+
+    public PageResponseDto<TodoSearchResponse> searchTodo(
+        Long page, Long size, String title, String nickname, LocalDate startDate, LocalDate endDate) {
+
+        List<TodoSearchResponse> getTodoList = todoRepository.findAllByTodo(
+            title, nickname, page, size, startDate, endDate);
+
+        Long todoElements = todoRepository.countByTodos();
+
+        List<TodoSearchResponse> todos = getTodoList.stream()
+            .map(todo -> TodoSearchResponse.of(
+               todo.getTitle(), todo.getManagerCount(), todo.getTotalComments()
+            )).collect(Collectors.toList());
+
+        return PageResponseDto.of(page, size, todoElements, todos);
     }
 }
