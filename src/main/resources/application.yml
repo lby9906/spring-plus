@@ -16,3 +16,7 @@ spring:
   jwt:
     secret:
       key: ${JWT_SECRET_KEY}
+
+logging:
+  level:
+    org.springframework.jdbc.core.JdbcTemplate: DEBUG

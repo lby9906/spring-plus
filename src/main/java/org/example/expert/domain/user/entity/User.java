@@ -46,4 +46,8 @@ public class User extends Timestamped {
     public void updateRole(UserRole userRole) {
         this.userRole = userRole;
     }
+
+    public static User of(String email, String password, UserRole userRole, String nickname) {
+        return new User(email, password, userRole, nickname);
+    }
 }
