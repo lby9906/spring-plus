@@ -38,6 +38,7 @@ public class SecurityConfig {
 
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(request -> request.getRequestURI().startsWith("/auth")).permitAll()
+				.requestMatchers("/health/**").permitAll()
 				.requestMatchers("/admin").hasAuthority(UserRole.ADMIN.getAuthority())
 				.anyRequest().authenticated()
 			)

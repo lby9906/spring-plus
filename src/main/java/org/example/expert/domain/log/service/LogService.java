@@ -8,15 +8,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LogService {
 
 	private final LogRepository logRepository;
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void saveLog(Long userId, HttpServletRequest request) {
-		logRepository.save(Log.of(request.getMethod(), request.getRequestURI(), userId));
+		try {
+			logRepository.save(Log.of(request.getMethod(), request.getRequestURI(), userId));
+		}catch (Exception e) {
+			log.warn("로그 저장 실패", e);
+		}
 	}
 }
